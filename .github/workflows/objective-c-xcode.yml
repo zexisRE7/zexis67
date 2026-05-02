@@ -1,0 +1,39 @@
+name: Build Tweak
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install Theos
+        run: |
+          git clone --depth=1 https://github.com/theos/theos.git $HOME/theos
+          curl -o $HOME/theos/bin/dm.pl https://raw.githubusercontent.com/theos/theos/master/bin/dm.pl
+          chmod +x $HOME/theos/bin/dm.pl
+          echo "THEOS=$HOME/theos" >> $GITHUB_ENV
+          echo "$HOME/theos/bin" >> $GITHUB_PATH
+      
+      - name: Build package
+        run: |
+          export THEOS=$HOME/theos
+          make package
+      
+      - name: Upload .deb
+        uses: actions/upload-artifact@v4
+        with:
+          name: tweak-deb
+          path: packages/*.deb
+      
+      - name: Upload .dylib
+        uses: actions/upload-artifact@v4
+        with:
+          name: tweak-dylib
+          path: .theos/obj/*.dylib
